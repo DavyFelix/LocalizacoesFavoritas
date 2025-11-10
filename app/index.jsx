@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
-import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useRef, useState } from "react";
+import { useFocusEffect, useNavigation, useRouter } from "expo-router";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
@@ -15,6 +15,7 @@ import { listarLocalizacoes } from "../utils/storage";
 
 export default function Mapa() {
   const router = useRouter();
+  const navigation = useNavigation();
   const [region, setRegion] = useState({
     latitude: -23.55052,
     longitude: -46.633308,
@@ -26,20 +27,22 @@ export default function Mapa() {
   const [menuAberto, setMenuAberto] = useState(false);
   const animacao = useRef(new Animated.Value(0)).current;
 
-  // 🔄 função centralizada para carregar os dados
+  // 🚫 Oculta o botão de voltar (header)
+  useLayoutEffect(() => {
+    navigation.setOptions({ headerShown: false });
+  }, [navigation]);
+
   async function carregarLocalizacoes() {
     const lista = await listarLocalizacoes();
     setLocalizacoes(lista || []);
   }
 
-  // ⚡ atualiza sempre que a tela for exibida novamente
   useFocusEffect(
     useCallback(() => {
       carregarLocalizacoes();
     }, [])
   );
 
-  // 📍 botão: localizar usuário
   async function localizarUsuario() {
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== "granted") return;
@@ -51,7 +54,6 @@ export default function Mapa() {
     });
   }
 
-  // ⚙️ animação do menu flutuante
   function alternarMenu() {
     const toValue = menuAberto ? 0 : 1;
     setMenuAberto(!menuAberto);
@@ -62,25 +64,39 @@ export default function Mapa() {
     }).start();
   }
 
-  // 🎞️ estilos de animação
   const estiloBotao1 = {
     transform: [
       { scale: animacao },
-      { translateY: animacao.interpolate({ inputRange: [0, 1], outputRange: [0, -80] }) },
+      {
+        translateY: animacao.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, -80],
+        }),
+      },
     ],
     opacity: animacao,
   };
   const estiloBotao2 = {
     transform: [
       { scale: animacao },
-      { translateY: animacao.interpolate({ inputRange: [0, 1], outputRange: [0, -160] }) },
+      {
+        translateY: animacao.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, -160],
+        }),
+      },
     ],
     opacity: animacao,
   };
   const estiloBotao3 = {
     transform: [
       { scale: animacao },
-      { translateY: animacao.interpolate({ inputRange: [0, 1], outputRange: [0, -240] }) },
+      {
+        translateY: animacao.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, -240],
+        }),
+      },
     ],
     opacity: animacao,
   };
@@ -110,11 +126,7 @@ export default function Mapa() {
             style={[styles.fabButton, { backgroundColor: "#4CAF50" }]}
             onPress={() => {
               alternarMenu();
-              // 👇 após voltar da tela de adicionar, recarrega os dados
-              router.push({
-                pathname: "/adicionar",
-                params: { refresh: Date.now() },
-              });
+              router.push("/adicionar");
             }}
           >
             <Ionicons name="add" size={28} color="#fff" />
@@ -150,7 +162,10 @@ export default function Mapa() {
         </Animated.View>
 
         {/* Botão principal */}
-        <TouchableOpacity style={[styles.fabButton, styles.fabMain]} onPress={alternarMenu}>
+        <TouchableOpacity
+          style={[styles.fabButton, styles.fabMain]}
+          onPress={alternarMenu}
+        >
           <Ionicons name={menuAberto ? "close" : "menu"} size={30} color="#fff" />
         </TouchableOpacity>
       </View>

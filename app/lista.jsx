@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Link, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { Link, useFocusEffect, useNavigation } from "expo-router";
+import { useCallback, useLayoutEffect, useState } from "react";
 import {
+  Alert,
   FlatList,
   Platform,
   StyleSheet,
@@ -9,17 +10,43 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { listarLocalizacoes } from "../utils/storage";
+import { listarLocalizacoes, removerLocalizacao } from "../utils/storage";
 
 export default function Lista() {
   const [locais, setLocais] = useState([]);
+  const navigation = useNavigation();
 
-  // Atualiza a lista quando voltar da tela de edição ou adição
+  // 🔹 Oculta o header padrão do Expo Router
+  useLayoutEffect(() => {
+    navigation.setOptions({ headerShown: false });
+  }, [navigation]);
+
+  // 🔄 Atualiza a lista sempre que a tela for focada
   useFocusEffect(
     useCallback(() => {
       listarLocalizacoes().then(setLocais);
     }, [])
   );
+
+  // 🗑️ Função para excluir uma localização com confirmação
+  async function excluirLocalizacao(index) {
+    Alert.alert(
+      "Excluir Localização",
+      "Tem certeza que deseja excluir esta localização?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Excluir",
+          style: "destructive",
+          onPress: async () => {
+            await removerLocalizacao(index);
+            const atualizada = await listarLocalizacoes();
+            setLocais(atualizada);
+          },
+        },
+      ]
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -34,7 +61,11 @@ export default function Lista() {
           renderItem={({ item, index }) => (
             <View style={styles.card}>
               <View style={styles.cardInfo}>
-                <Ionicons name="location-sharp" size={22} color={item.cor || "#E53935"} />
+                <Ionicons
+                  name="location-sharp"
+                  size={22}
+                  color={item.cor || "#E53935"}
+                />
                 <View style={{ marginLeft: 10 }}>
                   <Text style={styles.cardTitle}>{item.nome}</Text>
                   <Text style={styles.cardCoords}>
@@ -43,12 +74,20 @@ export default function Lista() {
                 </View>
               </View>
 
-              <Link href={`/editar?index=${index}`} asChild>
-                <TouchableOpacity style={styles.editButton}>
-                  <Ionicons name="create-outline" size={18} color="#fff" />
-                  <Text style={styles.editText}>Editar</Text>
+              <View style={styles.cardActions}>
+                <Link href={`/editar?index=${index}`} asChild>
+                  <TouchableOpacity style={styles.editButton}>
+                    <Ionicons name="create-outline" size={18} color="#fff" />
+                  </TouchableOpacity>
+                </Link>
+
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => excluirLocalizacao(index)}
+                >
+                  <Ionicons name="trash-outline" size={18} color="#fff" />
                 </TouchableOpacity>
-              </Link>
+              </View>
             </View>
           )}
           contentContainerStyle={{ paddingBottom: 100 }}
@@ -70,7 +109,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    paddingBottom: Platform.OS === "android" ? 40 : 20, // mais espaço no Android
+    paddingBottom: Platform.OS === "android" ? 40 : 20,
     backgroundColor: "#F8F9FA",
   },
   title: {
@@ -103,6 +142,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexShrink: 1,
   },
+  cardActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   cardTitle: {
     fontSize: 16,
     fontWeight: "600",
@@ -114,23 +158,19 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   editButton: {
-    flexDirection: "row",
-    alignItems: "center",
     backgroundColor: "#2196F3",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    padding: 8,
     borderRadius: 8,
   },
-  editText: {
-    color: "#fff",
-    marginLeft: 5,
-    fontSize: 14,
-    fontWeight: "500",
+  deleteButton: {
+    backgroundColor: "#E53935",
+    padding: 8,
+    borderRadius: 8,
   },
   backButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#E53935",
+    backgroundColor: "#6C757D",
     padding: 14,
     borderRadius: 12,
     justifyContent: "center",

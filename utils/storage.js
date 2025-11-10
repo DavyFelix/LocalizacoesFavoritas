@@ -33,3 +33,14 @@ export async function editarLocalizacao(index, novaLoc) {
     console.error("Erro ao editar localização:", error);
   }
 }
+
+export async function removerLocalizacao(index) {
+  try {
+    const dados = await AsyncStorage.getItem(STORAGE_KEY);
+    const lista = dados ? JSON.parse(dados) : [];
+    lista.splice(index, 1);
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
+  } catch (error) {
+    console.error("Erro ao remover localização:", error);
+  }
+}

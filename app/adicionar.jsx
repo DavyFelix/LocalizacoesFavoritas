@@ -12,7 +12,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { ColorPicker } from "react-native-color-picker";
 import { salvarLocalizacao } from "../utils/storage";
 
 export default function Adicionar() {
@@ -23,6 +22,11 @@ export default function Adicionar() {
   const [cor, setCor] = useState("#FF0000");
   const [loading, setLoading] = useState(false);
   const [pickerVisivel, setPickerVisivel] = useState(false);
+
+  const cores = [
+    "#FF0000", "#2196F3", "#4CAF50", "#FF9800", "#9C27B0",
+    "#E91E63", "#009688", "#795548", "#607D8B", "#000000",
+  ];
 
   async function usarLocalizacaoAtual() {
     try {
@@ -86,7 +90,14 @@ export default function Adicionar() {
           shadowOffset: { width: 0, height: 2 },
         }}
       >
-        <Text style={{ fontSize: 22, fontWeight: "600", marginBottom: 20, textAlign: "center" }}>
+        <Text
+          style={{
+            fontSize: 22,
+            fontWeight: "600",
+            marginBottom: 20,
+            textAlign: "center",
+          }}
+        >
           🗺️ Adicionar Localização
         </Text>
 
@@ -114,7 +125,9 @@ export default function Adicionar() {
         />
 
         {/* 🎨 Seletor de cor */}
-        <Text style={{ fontWeight: "600", marginBottom: 10 }}>Cor do marcador:</Text>
+        <Text style={{ fontWeight: "600", marginBottom: 10 }}>
+          Cor do marcador:
+        </Text>
 
         <TouchableOpacity
           style={[styles.colorPreview, { backgroundColor: cor }]}
@@ -123,23 +136,51 @@ export default function Adicionar() {
           <Text style={{ color: "#fff", fontWeight: "600" }}>🎨 Escolher cor</Text>
         </TouchableOpacity>
 
-        <Modal visible={pickerVisivel} animationType="slide" transparent={true}>
+        {/* 🔹 Modal do seletor de cores */}
+        <Modal visible={pickerVisivel} animationType="slide" transparent>
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-              <Text style={{ fontWeight: "600", marginBottom: 10 }}>Selecione a cor:</Text>
-              <ColorPicker
-                onColorSelected={(color) => {
-                  setCor(color);
-                  setPickerVisivel(false);
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "600",
+                  marginBottom: 15,
+                  textAlign: "center",
                 }}
-                style={{ flex: 1 }}
-                defaultColor={cor}
-              />
+              >
+                Escolha uma cor
+              </Text>
+
+              <View
+                style={{
+                  flexDirection: "row",
+                  flexWrap: "wrap",
+                  justifyContent: "center",
+                  gap: 10,
+                  marginBottom: 20,
+                }}
+              >
+                {cores.map((c) => (
+                  <TouchableOpacity
+                    key={c}
+                    onPress={() => setCor(c)}
+                    style={[
+                      styles.colorOption,
+                      {
+                        backgroundColor: c,
+                        borderWidth: cor === c ? 3 : 1,
+                        borderColor: cor === c ? "#000" : "#ccc",
+                      },
+                    ]}
+                  />
+                ))}
+              </View>
+
               <TouchableOpacity
                 onPress={() => setPickerVisivel(false)}
-                style={[styles.button, { backgroundColor: "#E53935", marginTop: 10 }]}
+                style={[styles.button, { backgroundColor: "#2196F3" }]}
               >
-                <Text style={styles.buttonText}>Fechar</Text>
+                <Text style={styles.buttonText}>Confirmar</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -153,7 +194,7 @@ export default function Adicionar() {
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>📍 Usar minha localização</Text>
+            <Text style={styles.buttonText}>Usar minha localização</Text>
           )}
         </TouchableOpacity>
 
@@ -161,7 +202,7 @@ export default function Adicionar() {
           onPress={salvar}
           style={[styles.button, { backgroundColor: "#4CAF50", marginTop: 10 }]}
         >
-          <Text style={styles.buttonText}>💾 Salvar Localização</Text>
+          <Text style={styles.buttonText}>Salvar Localização</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -183,6 +224,11 @@ const styles = {
     alignItems: "center",
     marginBottom: 20,
   },
+  colorOption: {
+    width: 45,
+    height: 45,
+    borderRadius: 25,
+  },
   button: {
     borderRadius: 10,
     paddingVertical: 12,
@@ -197,12 +243,13 @@ const styles = {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
+    alignItems: "center",
     padding: 20,
   },
   modalContent: {
     backgroundColor: "#fff",
     borderRadius: 20,
     padding: 20,
-    height: 400,
+    width: "90%",
   },
 };
