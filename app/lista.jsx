@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Link, useFocusEffect, useNavigation } from "expo-router";
+import { Link, useFocusEffect, useNavigation, useRouter } from "expo-router";
 import { useCallback, useLayoutEffect, useState } from "react";
 import {
   Alert,
@@ -15,20 +15,18 @@ import { listarLocalizacoes, removerLocalizacao } from "../utils/storage";
 export default function Lista() {
   const [locais, setLocais] = useState([]);
   const navigation = useNavigation();
+  const router = useRouter();
 
-  // 🔹 Oculta o header padrão do Expo Router
   useLayoutEffect(() => {
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
 
-  // 🔄 Atualiza a lista sempre que a tela for focada
   useFocusEffect(
     useCallback(() => {
       listarLocalizacoes().then(setLocais);
     }, [])
   );
 
-  // 🗑️ Função para excluir uma localização com confirmação
   async function excluirLocalizacao(index) {
     Alert.alert(
       "Excluir Localização",
@@ -48,6 +46,17 @@ export default function Lista() {
     );
   }
 
+  function irParaMapa(local) {
+    // 👇 Envia as coordenadas como parâmetros para a tela do mapa
+    router.push({
+      pathname: "/",
+      params: {
+        latitude: local.latitude,
+        longitude: local.longitude,
+      },
+    });
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>📍 Localizações Favoritas</Text>
@@ -59,7 +68,10 @@ export default function Lista() {
           data={locais}
           keyExtractor={(_, i) => i.toString()}
           renderItem={({ item, index }) => (
-            <View style={styles.card}>
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() => irParaMapa(item)} // 👉 ao tocar, vai para o mapa
+            >
               <View style={styles.cardInfo}>
                 <Ionicons
                   name="location-sharp"
@@ -88,13 +100,12 @@ export default function Lista() {
                   <Ionicons name="trash-outline" size={18} color="#fff" />
                 </TouchableOpacity>
               </View>
-            </View>
+            </TouchableOpacity>
           )}
           contentContainerStyle={{ paddingBottom: 100 }}
         />
       )}
 
-      {/* 🔹 Botão fixo no fim da tela */}
       <Link href="/" asChild>
         <TouchableOpacity style={styles.backButton}>
           <Ionicons name="arrow-back" size={20} color="#fff" />

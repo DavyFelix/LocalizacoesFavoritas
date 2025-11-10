@@ -1,7 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
-import { useFocusEffect, useNavigation, useRouter } from "expo-router";
-import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import {
+  useFocusEffect,
+  useLocalSearchParams,
+  useNavigation,
+  useRouter,
+} from "expo-router";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
@@ -16,18 +21,21 @@ import { listarLocalizacoes } from "../utils/storage";
 export default function Mapa() {
   const router = useRouter();
   const navigation = useNavigation();
+  const params = useLocalSearchParams();
+  const mapRef = useRef(null); // 👈 referência pro mapa
+
   const [region, setRegion] = useState({
     latitude: -23.55052,
     longitude: -46.633308,
     latitudeDelta: 0.05,
     longitudeDelta: 0.05,
   });
+
   const [marker, setMarker] = useState(null);
   const [localizacoes, setLocalizacoes] = useState([]);
   const [menuAberto, setMenuAberto] = useState(false);
   const animacao = useRef(new Animated.Value(0)).current;
 
-  // 🚫 Oculta o botão de voltar (header)
   useLayoutEffect(() => {
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
@@ -47,12 +55,33 @@ export default function Mapa() {
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== "granted") return;
     const local = await Location.getCurrentPositionAsync({});
-    setRegion({
-      ...region,
+    const novaRegiao = {
       latitude: local.coords.latitude,
       longitude: local.coords.longitude,
-    });
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    };
+    setRegion(novaRegiao);
+    mapRef.current?.animateToRegion(novaRegiao, 1000);
   }
+
+  // ✅ Centraliza quando vier da lista
+  useEffect(() => {
+    if (params.latitude && params.longitude) {
+      const lat = parseFloat(params.latitude);
+      const lon = parseFloat(params.longitude);
+      const novaRegiao = {
+        latitude: lat,
+        longitude: lon,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      };
+      setRegion(novaRegiao);
+      setMarker({ latitude: lat, longitude: lon });
+      // anima até o ponto
+      mapRef.current?.animateToRegion(novaRegiao, 1000);
+    }
+  }, [params.latitude, params.longitude]);
 
   function alternarMenu() {
     const toValue = menuAberto ? 0 : 1;
@@ -67,36 +96,21 @@ export default function Mapa() {
   const estiloBotao1 = {
     transform: [
       { scale: animacao },
-      {
-        translateY: animacao.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0, -80],
-        }),
-      },
+      { translateY: animacao.interpolate({ inputRange: [0, 1], outputRange: [0, -80] }) },
     ],
     opacity: animacao,
   };
   const estiloBotao2 = {
     transform: [
       { scale: animacao },
-      {
-        translateY: animacao.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0, -160],
-        }),
-      },
+      { translateY: animacao.interpolate({ inputRange: [0, 1], outputRange: [0, -160] }) },
     ],
     opacity: animacao,
   };
   const estiloBotao3 = {
     transform: [
       { scale: animacao },
-      {
-        translateY: animacao.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0, -240],
-        }),
-      },
+      { translateY: animacao.interpolate({ inputRange: [0, 1], outputRange: [0, -240] }) },
     ],
     opacity: animacao,
   };
@@ -104,6 +118,7 @@ export default function Mapa() {
   return (
     <View style={styles.container}>
       <MapView
+        ref={mapRef}
         style={styles.map}
         region={region}
         onPress={(e) => setMarker(e.nativeEvent.coordinate)}
@@ -119,8 +134,8 @@ export default function Mapa() {
         ))}
       </MapView>
 
+      {/* Menu flutuante */}
       <View style={styles.fabContainer}>
-        {/* ➕ Adicionar */}
         <Animated.View style={[styles.fabOption, estiloBotao1]}>
           <TouchableOpacity
             style={[styles.fabButton, { backgroundColor: "#4CAF50" }]}
@@ -133,7 +148,6 @@ export default function Mapa() {
           </TouchableOpacity>
         </Animated.View>
 
-        {/* 📋 Lista */}
         <Animated.View style={[styles.fabOption, estiloBotao2]}>
           <TouchableOpacity
             style={[styles.fabButton, { backgroundColor: "#2196F3" }]}
@@ -151,7 +165,6 @@ export default function Mapa() {
           </TouchableOpacity>
         </Animated.View>
 
-        {/* 📍 Localizar Usuário */}
         <Animated.View style={[styles.fabOption, estiloBotao3]}>
           <TouchableOpacity
             style={[styles.fabButton, { backgroundColor: "#FF9800" }]}
@@ -161,7 +174,6 @@ export default function Mapa() {
           </TouchableOpacity>
         </Animated.View>
 
-        {/* Botão principal */}
         <TouchableOpacity
           style={[styles.fabButton, styles.fabMain]}
           onPress={alternarMenu}
