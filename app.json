@@ -1,10 +1,24 @@
 {
   "expo": {
-    "name": "LocalizacoesFavoritas",
-    "slug": "localizacoesfavoritas",
+    "name": "FavsMaps",
+    "slug": "FavsMaps",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/images/icone.png",
+    "android": {
+      "package": "com.souzadavy.favsmap",
+      "versionCode": 1
+    },
     "entryPoint": "expo-router/entry",
-    "platforms": ["ios", "android", "web"]
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "9d3ff27d-213d-462c-8919-aed06dc7e5d6"
+      }
+    }
   }
 }
